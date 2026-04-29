@@ -71,6 +71,13 @@ export async function POST(req: NextRequest) {
     // Push to the configured branch
     execSync(`git -C ${repoPath} push origin ${branch}`)
 
+    // Audit success
+    try {
+      fs.appendFileSync(auditPath, `${new Date().toISOString()} - prod commit succeeded.\n`)
+    } catch {
+      // ignore logging failures
+    }
+
     return NextResponse.json({ ok: true, changes: true })
   } catch (e) {
     const err = (e as any).message || 'Push failed'

@@ -4,6 +4,7 @@ import { addCron } from "@/app/actions/opencron";
 import CronItem from "@/components/CronItem";
 import CronList from "@/components/CronList";
 import ThemeSwitcher from "@/components/ThemeSwitcher";
+import ProductionFooter from "@/components/ProductionFooter";
 
 export default async function Home() {
   const { config, errors } = await readOpenCronConfig();
@@ -115,8 +116,13 @@ export default async function Home() {
         )}
       </main>
       <footer className="border-t border-border">
-        <div className="mx-auto max-w-5xl px-6 py-4 text-xs text-muted-foreground">
-          Cron expressions are parsed elsewhere; this UI only displays them.
+        <div className="mx-auto max-w-5xl px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="text-xs text-muted-foreground">
+              Cron expressions are parsed elsewhere; this UI only displays them.
+            </div>
+            <ProductionFooter />
+          </div>
         </div>
       </footer>
     </div>
