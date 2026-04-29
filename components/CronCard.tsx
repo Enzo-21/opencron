@@ -18,7 +18,12 @@ export default function CronCard({ url, schedule, editing = false }: Props) {
         "relative rounded-xl border border-border bg-card p-4 shadow-sm transition-colors " +
         (editing ? "" : "hover:border-primary cursor-pointer")
       }
-      onClick={!editing ? (e: MouseEvent<HTMLDivElement>) => { if (e.target === e.currentTarget) setOpen(true) } : undefined}
+      onClick={!editing ? (e: MouseEvent<HTMLDivElement>) => {
+        // If the user clicked an interactive element inside the card, don't open the dialog.
+        const target = e.target as HTMLElement | null;
+        if (target && target.closest && target.closest('a,button,input,textarea,select,label,[data-no-open]')) return;
+        setOpen(true);
+      } : undefined}
     >
       {/* Cron badge/input in top-right */}
       {editing ? (
