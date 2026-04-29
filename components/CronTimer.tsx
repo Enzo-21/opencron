@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import useCronStatus from "@/components/cron-status";
 import { isValidCronExpression, cronMatchesDate, nextRunDate } from "@/lib/cron-core";
 
 type Props = {
@@ -36,35 +37,21 @@ export default function CronTimer({ url, schedule }: Props) {
   }, []);
 
   // Poll server status for last run timestamp if available
+  const lastFromServer = useCronStatus(url);
+
   useEffect(() => {
-    let stopped = false;
-    const poll = async () => {
-      try {
-        const res = await fetch(`/api/cron/status`, { cache: "no-store" });
-        if (!res.ok) return;
-        const data = await res.json();
-        const ms = data?.last?.[url];
-        if (typeof ms === "number" && !stopped) {
-          setLastRunMs((prev) => {
-            if (prev == null || ms > prev) {
-              // New successful run observed; flash success
-              setFlash(true);
-              setTimeout(() => setFlash(false), 1200);
-              lastSeenRef.current = ms;
-              return ms;
-            }
-            return prev;
-          });
+    if (typeof lastFromServer === "number") {
+      setLastRunMs((prev) => {
+        if (prev == null || lastFromServer > prev) {
+          setFlash(true);
+          setTimeout(() => setFlash(false), 1200);
+          lastSeenRef.current = lastFromServer;
+          return lastFromServer;
         }
-      } catch {}
-    };
-    const iv = setInterval(poll, 1000);
-    poll();
-    return () => {
-      stopped = true;
-      clearInterval(iv);
-    };
-  }, [url]);
+        return prev;
+      });
+    }
+  }, [lastFromServer]);
 
   const next = useMemo(() => {
     if (!valid) return null;

@@ -27,7 +27,7 @@ export default function JobDialog({ url, schedule, open, onOpenChange }: Props) 
       } catch {}
     };
     load();
-    const iv = setInterval(load, 2000);
+    const iv = setInterval(load, 5000);
     return () => {
       stop = true;
       clearInterval(iv);

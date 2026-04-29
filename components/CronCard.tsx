@@ -1,5 +1,5 @@
 import { translateCron } from "@/lib/cron-translator";
-import { useState } from "react";
+import { useState, type MouseEvent } from "react";
 import CronTimer from "@/components/CronTimer";
 import JobDialog from "@/components/JobDialog";
 
@@ -18,7 +18,7 @@ export default function CronCard({ url, schedule, editing = false }: Props) {
         "relative rounded-xl border border-border bg-card p-4 shadow-sm transition-colors " +
         (editing ? "" : "hover:border-primary cursor-pointer")
       }
-      onClick={!editing ? () => setOpen(true) : undefined}
+      onClick={!editing ? (e: MouseEvent<HTMLDivElement>) => { if (e.target === e.currentTarget) setOpen(true) } : undefined}
     >
       {/* Cron badge/input in top-right */}
       {editing ? (
