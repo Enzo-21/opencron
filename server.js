@@ -31,6 +31,94 @@ const LOGS_RETENTION_DAYS = Number(process.env.LOGS_RETENTION_DAYS || "7");
 const LOGS_MAX_ENTRIES = Number(process.env.LOGS_MAX_ENTRIES || "2000");
 const LOG_SNIPPET_LIMIT = Number(process.env.LOG_SNIPPET_LIMIT || "1024");
 
+// GitHub sync configuration (optional)
+const GH_PAT = process.env.GH_PAT || process.env.GITHUB_TOKEN || "";
+const GH_REPO = process.env.GH_REPO || ""; // owner/repo
+const GH_BRANCH = process.env.GH_BRANCH || "main";
+const GH_SYNC_INTERVAL_MS = Number(process.env.GH_SYNC_INTERVAL_MS || String(6 * 60 * 60 * 1000)); // default 6 hours
+
+// GitHub client globals (initialized at runtime if configured)
+let githubOctokit = null;
+let githubOwner = null;
+let githubRepoName = null;
+
+async function initGithubClient() {
+  if (!GH_PAT || !GH_REPO) return null;
+  try {
+    // require here so dependency is optional until configured
+    const { Octokit } = require("@octokit/rest");
+    const octokit = new Octokit({ auth: GH_PAT });
+    const parts = String(GH_REPO).split("/");
+    if (parts.length !== 2) {
+      console.warn("[OpenCron] GH_REPO must be in 'owner/repo' format");
+      return null;
+    }
+    githubOwner = parts[0];
+    githubRepoName = parts[1];
+    githubOctokit = octokit;
+    console.log(`[OpenCron] GitHub sync enabled for ${githubOwner}/${githubRepoName} (branch: ${GH_BRANCH})`);
+    return octokit;
+  } catch (err) {
+    console.warn("[OpenCron] Failed to initialize GitHub client (install @octokit/rest?):", err?.message || err);
+    return null;
+  }
+}
+
+async function commitFileToGithub(pathInRepo, contentStr, message) {
+  if (!githubOctokit) return;
+  try {
+    const base64 = Buffer.from(contentStr, "utf8").toString("base64");
+    let sha = undefined;
+    try {
+      const res = await githubOctokit.repos.getContent({ owner: githubOwner, repo: githubRepoName, path: pathInRepo, ref: GH_BRANCH });
+      if (res && res.data && res.data.sha) sha = res.data.sha;
+    } catch (e) {
+      if (e.status !== 404) console.warn("[OpenCron] Error fetching existing file info:", e?.message || e);
+    }
+    await githubOctokit.repos.createOrUpdateFileContents({
+      owner: githubOwner,
+      repo: githubRepoName,
+      path: pathInRepo,
+      message: message || `Sync logs: ${new Date().toISOString()}`,
+      content: base64,
+      sha: sha || undefined,
+      branch: GH_BRANCH,
+    });
+    console.log("[OpenCron] Pushed", pathInRepo, "to GitHub");
+  } catch (e) {
+    console.warn("[OpenCron] Failed to push file to GitHub:", pathInRepo, e?.message || e);
+  }
+}
+
+async function pushAllLogsToGithub() {
+  if (!GH_PAT || !GH_REPO) return;
+  if (!githubOctokit) {
+    await initGithubClient();
+    if (!githubOctokit) return;
+  }
+  try {
+    const files = await fs.readdir(LOGS_DIR).catch(() => []);
+    if (!files || files.length === 0) {
+      console.log("[OpenCron] No logs to push");
+      return;
+    }
+    for (const f of files) {
+      if (!f.endsWith(".json")) continue;
+      const filePath = path.join(LOGS_DIR, f);
+      try {
+        const raw = await fs.readFile(filePath, "utf8");
+        // use posix path for GitHub repo
+        const repoPath = ["logs", f].join("/");
+        await commitFileToGithub(repoPath, raw, `Sync logs: ${f} ${new Date().toISOString()}`);
+      } catch (e) {
+        console.warn("[OpenCron] Read failed for", filePath, e?.message || e);
+      }
+    }
+  } catch (e) {
+    console.warn("[OpenCron] pushAllLogsToGithub failed:", e?.message || e);
+  }
+}
+
 // ---- Cron utilities (standalone JS copy) ----
 /** Returns true if n is an integer in [min, max]. */
 function numberInRange(n, min, max) {
@@ -433,5 +521,16 @@ async function ensurePortFree(targetPort) {
   server.listen(port, () => {
     console.log(`> Ready on http://localhost:${port}`);
     startMinuteAlignedScheduler();
+
+    // If GitHub sync is configured, initialize and schedule periodic pushes
+    (async () => {
+      if (!GH_PAT || !GH_REPO) return;
+      await initGithubClient();
+      // initial delay then periodic
+      setTimeout(() => {
+        pushAllLogsToGithub();
+        setInterval(pushAllLogsToGithub, GH_SYNC_INTERVAL_MS);
+      }, 10_000);
+    })();
   });
 })();
