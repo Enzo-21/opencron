@@ -1,0 +1,13 @@
+{
+  "watch": [
+    "server.js",
+    "opencron.json"
+  ],
+  "ignore": [
+    ".next",
+    "node_modules"
+  ],
+  "ext": "js,json",
+  "exec": "node server.js",
+  "signal": "SIGTERM"
+}

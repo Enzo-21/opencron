@@ -1,0 +1,16 @@
+{
+  "crons": [
+    {
+      "url": "https://tweetagents.com/api/hey",
+      "schedule": "*/5 * * * *"
+    },
+    {
+      "url": "https://tweetagents.com",
+      "schedule": "*/5 * * * *"
+    },
+    {
+      "url": "https://www.vectrals.com",
+      "schedule": "*/5 * * * *"
+    }
+  ]
+}
