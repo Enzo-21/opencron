@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
-import fs from "node:fs/promises";
-import path from "node:path";
 
+// Keep runtime dynamic and nodejs for server-side file access
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
@@ -12,7 +11,10 @@ export async function GET() {
     return NextResponse.json({ now, last: {} });
   }
   try {
-    const raw = await fs.readFile(statePath, "utf8");
+    // Dynamically import fs to avoid top-level filesystem imports being traced by Turbopack/NFT
+    const fs = await import("node:fs/promises");
+    // Tell Turbopack to ignore this dynamic file path when tracing
+    const raw = await fs.readFile(/*turbopackIgnore: true*/ statePath, "utf8");
     const json = JSON.parse(raw);
     const last: Record<string, number> = {};
     const lastSec = json?.lastSecondByUrl || {};

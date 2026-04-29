@@ -1,6 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import fs from "node:fs/promises";
-import path from "node:path";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -10,10 +8,15 @@ export async function GET(req: NextRequest) {
   const url = searchParams.get("url") || "";
   const statePath = process.env.OPENCRON_STATE_PATH || "";
   if (!url) return NextResponse.json({ logs: [] });
+
+  // Dynamically import fs/path to avoid top-level filesystem imports being traced by Turbopack
+  const fs = await import("node:fs/promises");
+  const path = await import("node:path");
+
   // Prefer persisted state file if provided
   if (statePath) {
     try {
-      const raw = await fs.readFile(statePath, "utf8");
+      const raw = await fs.readFile(/*turbopackIgnore: true*/ statePath, "utf8");
       const json = JSON.parse(raw);
       const logs = Array.isArray(json?.logsByUrl?.[url]) ? json.logsByUrl[url] : [];
       return NextResponse.json({ logs });
@@ -24,7 +27,7 @@ export async function GET(req: NextRequest) {
 
   // Fallback: read per-host JSON file from logs/ directory
   try {
-    const logsDir = process.env.LOGS_DIR || path.join(process.cwd(), "logs");
+    const logsDir = process.env.LOGS_DIR || path.join(/*turbopackIgnore: true*/ process.cwd(), "logs");
     const host = (() => {
       try {
         return new URL(url).hostname;
@@ -33,7 +36,7 @@ export async function GET(req: NextRequest) {
       }
     })();
     const file = path.join(logsDir, `${host}.json`);
-    const raw = await fs.readFile(file, "utf8");
+    const raw = await fs.readFile(/*turbopackIgnore: true*/ file, "utf8");
     const json = JSON.parse(raw);
     const logs = Array.isArray(json?.entries) ? json.entries : [];
     return NextResponse.json({ logs });

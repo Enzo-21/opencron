@@ -1,8 +1,13 @@
 "use server";
 
-import fs from "node:fs/promises";
-import path from "node:path";
 import { revalidatePath } from "next/cache";
+
+// Avoid top-level filesystem imports to prevent Turbopack NFT tracing the whole project.
+async function getFsPath() {
+  const fs = await import("node:fs/promises");
+  const path = await import("node:path");
+  return { fs, path };
+}
 import type { OpenCronConfig } from "@/lib/opencron";
 import { isValidCronExpression } from "@/lib/opencron";
 
@@ -34,11 +39,12 @@ export async function addCron(formData: FormData) {
     throw new Error("Schedule must be a valid 5-field cron expression");
   }
 
-  const filePath = path.join(process.cwd(), "opencron.json");
+  const { fs, path } = await getFsPath();
+  const filePath = path.join(/*turbopackIgnore: true*/ process.cwd(), "opencron.json");
 
   let config: OpenCronConfig = { crons: [] };
   try {
-    const raw = await fs.readFile(filePath, "utf8");
+    const raw = await fs.readFile(/*turbopackIgnore: true*/ filePath, "utf8");
     const json = JSON.parse(raw);
     if (Array.isArray(json?.crons)) {
       config.crons = json.crons as any;
@@ -68,10 +74,11 @@ export async function deleteCron(formData: FormData) {
   const index = Number(rawIndex);
   if (!Number.isInteger(index)) throw new Error("Invalid index");
 
-  const filePath = path.join(process.cwd(), "opencron.json");
+  const { fs, path } = await getFsPath();
+  const filePath = path.join(/*turbopackIgnore: true*/ process.cwd(), "opencron.json");
   let config: OpenCronConfig = { crons: [] };
   try {
-    const raw = await fs.readFile(filePath, "utf8");
+    const raw = await fs.readFile(/*turbopackIgnore: true*/ filePath, "utf8");
     const json = JSON.parse(raw);
     if (Array.isArray(json?.crons)) config.crons = json.crons as any;
   } catch (err: any) {
@@ -106,10 +113,11 @@ export async function updateCron(formData: FormData) {
     throw new Error("Schedule must be a valid 5-field cron expression");
   }
 
-  const filePath = path.join(process.cwd(), "opencron.json");
+  const { fs, path } = await getFsPath();
+  const filePath = path.join(/*turbopackIgnore: true*/ process.cwd(), "opencron.json");
   let config: OpenCronConfig = { crons: [] };
   try {
-    const raw = await fs.readFile(filePath, "utf8");
+    const raw = await fs.readFile(/*turbopackIgnore: true*/ filePath, "utf8");
     const json = JSON.parse(raw);
     if (Array.isArray(json?.crons)) config.crons = json.crons as any;
   } catch (err: any) {
@@ -146,10 +154,11 @@ export async function reorderCronBulk(formData: FormData) {
     .map((s) => Number(s))
     .filter((n) => Number.isInteger(n));
 
-  const filePath = path.join(process.cwd(), "opencron.json");
+  const { fs, path } = await getFsPath();
+  const filePath = path.join(/*turbopackIgnore: true*/ process.cwd(), "opencron.json");
   let config: OpenCronConfig = { crons: [] };
   try {
-    const content = await fs.readFile(filePath, "utf8");
+    const content = await fs.readFile(/*turbopackIgnore: true*/ filePath, "utf8");
     const json = JSON.parse(content);
     if (Array.isArray(json?.crons)) config.crons = json.crons as any;
   } catch (err: any) {
@@ -176,10 +185,11 @@ export async function reorderCron(formData: FormData) {
   const to = Number(rawTo);
   if (!Number.isInteger(from) || !Number.isInteger(to)) throw new Error("Invalid indices");
 
-  const filePath = path.join(process.cwd(), "opencron.json");
+  const { fs, path } = await getFsPath();
+  const filePath = path.join(/*turbopackIgnore: true*/ process.cwd(), "opencron.json");
   let config: OpenCronConfig = { crons: [] };
   try {
-    const raw = await fs.readFile(filePath, "utf8");
+    const raw = await fs.readFile(/*turbopackIgnore: true*/ filePath, "utf8");
     const json = JSON.parse(raw);
     if (Array.isArray(json?.crons)) config.crons = json.crons as any;
   } catch (err: any) {
