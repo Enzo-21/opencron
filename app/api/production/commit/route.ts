@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { execSync } from 'child_process'
+import fs from 'fs'
+import path from 'path'
 
 // This route runs only in production and commits/pushes repository changes
 // using a GitHub personal access token stored in environment variables.
@@ -31,6 +33,28 @@ export async function POST(req: NextRequest) {
   const remote = `https://${token}:x-oauth-token@github.com/${owner}/${repo}.git`
 
   try {
+    // Ensure logs directory exists inside the repo for audit trails
+    const logsDir = path.join(repoPath, 'logs')
+    try {
+      fs.mkdirSync(logsDir, { recursive: true })
+    } catch {
+      // ignore if cannot create logs dir
+    }
+
+    // Audit log: record the attempt
+    const auditPath = path.join(logsDir, 'prod_commit.log')
+    try {
+      fs.appendFileSync(auditPath, `${new Date().toISOString()} - prod commit requested (route).\n`)
+    } catch {
+      // ignore logging failures
+    }
+
+    // Check for actual changes before committing
+    const status = execSync(`git -C ${repoPath} status --porcelain`).toString().trim()
+    if (!status) {
+      return NextResponse.json({ ok: true, changes: false })
+    }
+
     // Update or add the origin remote to use the token-authenticated URL
     try {
       execSync(`git -C ${repoPath} remote get-url origin`, { stdio: 'ignore' })
@@ -41,13 +65,13 @@ export async function POST(req: NextRequest) {
 
     // Stage all changes and commit
     execSync(`git -C ${repoPath} add -A`)
-    const message = payload.commitMessage?.replace(/"/g, '\\"') || 'UI-driven production update'
+    const message = (payload.commitMessage ?? 'UI-driven production update').replace(/"/g, '\\"')
     execSync(`git -C ${repoPath} commit -m "${message}"`, { stdio: 'ignore' })
 
     // Push to the configured branch
     execSync(`git -C ${repoPath} push origin ${branch}`)
 
-    return NextResponse.json({ ok: true })
+    return NextResponse.json({ ok: true, changes: true })
   } catch (e) {
     const err = (e as any).message || 'Push failed'
     return NextResponse.json({ error: err }, { status: 500 })
