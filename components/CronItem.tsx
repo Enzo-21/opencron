@@ -14,8 +14,9 @@ type Props = {
 
 export default function CronItem({ index, url, schedule, upIndex = null, downIndex = null }: Props) {
   const [isEditing, setIsEditing] = useState(false);
+  const isProd = (process.env.NODE_ENV || 'development') === 'production' || (process.env.NEXT_PUBLIC_APP_ENV || '') === 'production';
 
-  if (isEditing) {
+  if (isEditing && !isProd) {
     return (
       <form
         action={async (fd) => {
@@ -66,7 +67,8 @@ export default function CronItem({ index, url, schedule, upIndex = null, downInd
       <div className="relative group">
         <CronCard url={url} schedule={schedule} />
         {/* Hover controls bottom-right */}
-        <div className="pointer-events-none absolute bottom-2 right-2 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+        {!isProd && (
+          <div className="pointer-events-none absolute bottom-2 right-2 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
           <button
             type="button"
             title="Edit"
@@ -103,7 +105,8 @@ export default function CronItem({ index, url, schedule, upIndex = null, downInd
               </svg>
             </button>
           </form>
-        </div>
+          </div>
+        )}
       </div>
 
       {(typeof upIndex === "number" || typeof downIndex === "number") && (

@@ -11,6 +11,16 @@ async function getFsPath() {
 import type { OpenCronConfig } from "@/lib/opencron";
 import { isValidCronExpression } from "@/lib/opencron";
 
+// Prevent UI-driven modifications when running in production.
+function ensureNotProduction() {
+  const env = process.env.NODE_ENV || "development";
+  if (env === "production") {
+    throw new Error(
+      "Modifying cron jobs is disabled in production. Edit opencron.json locally and push changes."
+    );
+  }
+}
+
 /** Returns true if `value` is an absolute http(s) URL. */
 function isAbsoluteUrl(value: string): boolean {
   try {
@@ -26,6 +36,7 @@ function isAbsoluteUrl(value: string): boolean {
  * Validates absolute URL and 5-field cron expression and prevents duplicates by URL.
  */
 export async function addCron(formData: FormData) {
+  ensureNotProduction();
   const rawUrl = (formData.get("url") ?? "").toString().trim();
   const rawSchedule = (formData.get("schedule") ?? "").toString().trim();
 
@@ -70,6 +81,7 @@ export async function addCron(formData: FormData) {
 
 /** Server action: delete one cron by index. No-op if file missing. */
 export async function deleteCron(formData: FormData) {
+  ensureNotProduction();
   const rawIndex = (formData.get("index") ?? "").toString();
   const index = Number(rawIndex);
   if (!Number.isInteger(index)) throw new Error("Invalid index");
@@ -101,6 +113,7 @@ export async function deleteCron(formData: FormData) {
  * Enforces absolute URL, valid cron, and duplicate protection (by URL).
  */
 export async function updateCron(formData: FormData) {
+  ensureNotProduction();
   const rawIndex = (formData.get("index") ?? "").toString();
   const index = Number(rawIndex);
   const rawUrl = (formData.get("url") ?? "").toString().trim();
@@ -147,6 +160,7 @@ export async function updateCron(formData: FormData) {
  * Example: if there are 4 items and you want [2,0,1,3], send order="2,0,1,3".
  */
 export async function reorderCronBulk(formData: FormData) {
+  ensureNotProduction();
   const raw = (formData.get("order") ?? "").toString().trim();
   if (!raw) return;
   const indices = raw
@@ -179,6 +193,7 @@ export async function reorderCronBulk(formData: FormData) {
 }
 
 export async function reorderCron(formData: FormData) {
+  ensureNotProduction();
   const rawFrom = (formData.get("from") ?? "").toString();
   const rawTo = (formData.get("to") ?? "").toString();
   const from = Number(rawFrom);
