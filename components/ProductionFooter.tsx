@@ -8,6 +8,7 @@ export default function ProductionFooter() {
   const [lastPush, setLastPush] = useState<string | null>(null)
   const [nextPush, setNextPush] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const isProd = (process.env.NODE_ENV || 'development') === 'production' || (process.env.NEXT_PUBLIC_APP_ENV || '') === 'production';
 
   const fetchStatus = async () => {
     try {
@@ -52,14 +53,18 @@ export default function ProductionFooter() {
         <div>Next scheduled push: <span className="font-medium">{fmt(nextPush)}</span></div>
       </div>
       <div>
-        <button
-          type="button"
-          onClick={handlePush}
-          disabled={loading}
-          className="inline-flex h-9 items-center justify-center rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground hover:opacity-90"
-        >
-          {loading ? 'Pushing...' : 'Push to main'}
-        </button>
+        {!isProd ? (
+          <button
+            type="button"
+            onClick={handlePush}
+            disabled={loading}
+            className="inline-flex h-9 items-center justify-center rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground hover:opacity-90"
+          >
+            {loading ? 'Pushing...' : 'Push to main'}
+          </button>
+        ) : (
+          <div className="text-xs text-muted-foreground">Manual pushes disabled in production; changes are pushed on schedule.</div>
+        )}
       </div>
     </div>
   )

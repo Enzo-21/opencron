@@ -30,9 +30,11 @@ export default function CronList({ crons }: Props) {
   const [reorderMode, setReorderMode] = useState(false);
   const [localOrder, setLocalOrder] = useState<Array<{ idx: number; item: Cron }>>([]);
   const dragFrom = useRef<number | null>(null);
+  const isProd = (process.env.NODE_ENV || 'development') === 'production' || (process.env.NEXT_PUBLIC_APP_ENV || '') === 'production';
 
   useEffect(() => {
-    if (reorderMode) {
+    const effectiveReorder = isProd ? false : reorderMode;
+    if (effectiveReorder) {
       setLocalOrder(crons.map((c, i) => ({ idx: i, item: c })));
     } else {
       setLocalOrder([]);
@@ -40,6 +42,20 @@ export default function CronList({ crons }: Props) {
   }, [reorderMode, crons]);
 
   const content = useMemo(() => {
+    if (isProd) {
+      // In production, editing/reordering is disabled — render read-only view
+      const items = sortAlpha
+        ? [...crons].sort((a, b) => a.url.localeCompare(b.url))
+        : crons;
+      return (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {items.map((c, i) => (
+            <CronItem key={`${c.url}-${i}`} index={i} url={c.url} schedule={c.schedule} />
+          ))}
+        </div>
+      );
+    }
+
     if (reorderMode) {
       const onDragStart = (i: number) => (e: React.DragEvent) => {
         dragFrom.current = i;
@@ -183,6 +199,7 @@ export default function CronList({ crons }: Props) {
             type="checkbox"
             checked={reorderMode}
             onChange={(e) => setReorderMode(e.target.checked)}
+            disabled={isProd}
           />
           Reorder mode
         </label>

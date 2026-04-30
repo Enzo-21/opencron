@@ -33,13 +33,23 @@ export async function POST(req: NextRequest) {
   const remote = `https://${token}:x-oauth-token@github.com/${owner}/${repo}.git`
 
   try {
-    // Ensure logs directory exists inside the repo for audit trails
+    // Respect a minimum interval between UI-driven pushes to avoid frequent deployments.
     const logsDir = path.join(repoPath, 'logs')
     try {
       fs.mkdirSync(logsDir, { recursive: true })
-    } catch {
-      // ignore if cannot create logs dir
-    }
+    } catch {}
+
+    const lastStampFile = path.join(logsDir, 'last_prod_push.txt')
+    const intervalMs = parseInt(process.env.GH_SYNC_INTERVAL_MS || '') || 6 * 60 * 60 * 1000
+    try {
+      if (fs.existsSync(lastStampFile)) {
+        const lastIso = fs.readFileSync(lastStampFile, 'utf8').toString().trim()
+        const lastMs = Date.parse(lastIso)
+        if (!Number.isNaN(lastMs) && Date.now() - lastMs < intervalMs) {
+          return NextResponse.json({ error: 'Push rate-limited', retryAfterMs: intervalMs - (Date.now() - lastMs) }, { status: 429 })
+        }
+      }
+    } catch {}
 
     // Audit log: record the attempt
     const auditPath = path.join(logsDir, 'prod_commit.log')
@@ -71,6 +81,10 @@ export async function POST(req: NextRequest) {
     // Push to the configured branch
     execSync(`git -C ${repoPath} push origin ${branch}`)
 
+    // Record last push timestamp for rate-limiting
+    try {
+      fs.writeFileSync(lastStampFile, new Date().toISOString())
+    } catch {}
     // Audit success
     try {
       fs.appendFileSync(auditPath, `${new Date().toISOString()} - prod commit succeeded.\n`)
