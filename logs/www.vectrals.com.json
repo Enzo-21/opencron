@@ -165,6 +165,13 @@
       "ok": true,
       "durationMs": 401,
       "bodySnippet": "<!DOCTYPE html><html lang=\"en\"><head><meta charSet=\"utf-8\"/><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"/><link rel=\"preload\" href=\"/_next/static/media/0ecabae3741772cf-s.p.woff2\" as=\"font\" crossorigin=\"\" type=\"font/woff2\"/><link rel=\"stylesheet\" href=\"/_next/static/css/fd05d21bf5d23b7f.css\" data-precedence=\"next\"/><link rel=\"preload\" as=\"script\" fetchPriority=\"low\" href=\"/_next/static/chunks/webpack-2cd5f3b6e1b518b2.js\"/><script src=\"/_next/static/chunks/fd9d1056-ad15f396ddf9b7e5.js\" async=\"\"></script><script src=\"/_next/static/chunks/117-f3452736e43679c7.js\" async=\"\"></script><script src=\"/_next/static/chunks/main-app-2dcde4753ea0d175.js\" async=\"\"></script><script src=\"/_next/static/chunks/59650de3-97572f519a24568d.js\" async=\"\"></script><script src=\"/_next/static/chunks/809-359b545ee4fa3258.js\" async=\"\"></script><script src=\"/_next/static/chunks/app/page-ea29e6e3e1c80888.js\" async=\"\"></script><meta name=\"theme-color\" content=\"#000000\"/><link rel=\"icon\" href=\"/icon-192x192.png\" sizes=\""
+    },
+    {
+      "ts": 1777761900481,
+      "status": 200,
+      "ok": true,
+      "durationMs": 398,
+      "bodySnippet": "<!DOCTYPE html><html lang=\"en\"><head><meta charSet=\"utf-8\"/><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"/><link rel=\"preload\" href=\"/_next/static/media/0ecabae3741772cf-s.p.woff2\" as=\"font\" crossorigin=\"\" type=\"font/woff2\"/><link rel=\"stylesheet\" href=\"/_next/static/css/fd05d21bf5d23b7f.css\" data-precedence=\"next\"/><link rel=\"preload\" as=\"script\" fetchPriority=\"low\" href=\"/_next/static/chunks/webpack-2cd5f3b6e1b518b2.js\"/><script src=\"/_next/static/chunks/fd9d1056-ad15f396ddf9b7e5.js\" async=\"\"></script><script src=\"/_next/static/chunks/117-f3452736e43679c7.js\" async=\"\"></script><script src=\"/_next/static/chunks/main-app-2dcde4753ea0d175.js\" async=\"\"></script><script src=\"/_next/static/chunks/59650de3-97572f519a24568d.js\" async=\"\"></script><script src=\"/_next/static/chunks/809-359b545ee4fa3258.js\" async=\"\"></script><script src=\"/_next/static/chunks/app/page-ea29e6e3e1c80888.js\" async=\"\"></script><meta name=\"theme-color\" content=\"#000000\"/><link rel=\"icon\" href=\"/icon-192x192.png\" sizes=\""
     }
   ]
 }
